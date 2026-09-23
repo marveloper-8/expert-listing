@@ -18,7 +18,7 @@ To make evaluating this straightforward and frictionless:
 go run cmd/main.go
 
 # 2. Open Swagger UI in your browser
-# http://localhost:8080/swagger/index.html
+# http://localhost:8082/swagger/index.html
 ```
 
 ---
@@ -79,7 +79,7 @@ Listings use a clean nested structure grouping location attributes (`address`, `
 ## How to Test on Swagger UI
 
 Once `go run cmd/main.go` is running, open:
-👉 **`http://localhost:8080/swagger/index.html`**
+👉 **`http://localhost:8082/swagger/index.html`**
 
 ### 1. View Seeded Listings
 - Expand `GET /api/listings` $\rightarrow$ **Try it out** $\rightarrow$ **Execute**.

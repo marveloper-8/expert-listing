@@ -26,7 +26,7 @@ func setupTestRouter(t *testing.T) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	cfg := &config.Config{
-		Port:        "8080",
+		Port:        "8082",
 		DBDriver:    "sqlite",
 		DatabaseURL: fmt.Sprintf("file:test_%s?mode=memory&cache=shared", uuid.New().String()),
 		Environment: "test",

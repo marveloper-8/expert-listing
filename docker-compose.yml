@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: expertlisting_api
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
-      - PORT=8080
+      - PORT=8082
       - ENV=production
       - DB_DRIVER=postgres
       - DATABASE_URL=postgres://postgres:postgres@db:5432/expertlisting?sslmode=disable

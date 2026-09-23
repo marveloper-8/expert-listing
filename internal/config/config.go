@@ -24,7 +24,7 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	port := firstNonEmpty(os.Getenv("PORT"), "8080")
+	port := firstNonEmpty(os.Getenv("PORT"), "8082")
 	driver := strings.ToLower(firstNonEmpty(os.Getenv("DB_DRIVER"), "sqlite"))
 	databaseURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	env := firstNonEmpty(os.Getenv("ENV"), "development")

@@ -22,6 +22,6 @@ WORKDIR /app
 COPY --from=builder /app/expertlisting-server .
 
 USER appuser
-EXPOSE 8080
+EXPOSE 8082
 
 CMD ["./expertlisting-server"]
