@@ -20,6 +20,7 @@ RUN adduser -D appuser
 WORKDIR /app
 
 COPY --from=builder /app/expertlisting-server .
+RUN chown -R appuser:appuser /app
 
 USER appuser
 EXPOSE 8082
