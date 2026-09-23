@@ -1,0 +1,38 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: expertlisting_api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ENV=production
+      - DB_DRIVER=postgres
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/expertlisting?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: expertlisting_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: expertlisting
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

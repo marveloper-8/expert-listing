@@ -1,0 +1,26 @@
+# Environment variables
+.env
+
+# Binary artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+expertlisting-server
+bin/
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test coverage
+coverage.out
+coverage.html

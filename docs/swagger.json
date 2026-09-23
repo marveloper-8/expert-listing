@@ -1,0 +1,971 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Production-ready Property Listings REST API with geospatial radius search, advanced filtering, and pagination.",
+        "title": "ExpertListing Property Management API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Returns the service health status, uptime, and timestamp",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Service Health Check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/listings": {
+            "get": {
+                "description": "Returns paginated listings with optional sorting",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "List property listings",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "created_at",
+                            "price",
+                            "bedrooms"
+                        ],
+                        "type": "string",
+                        "default": "created_at",
+                        "description": "Sort field",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort order",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Listing"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "$ref": "#/definitions/models.PaginationMetadata"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new listing with nested location details, pricing, and agent metadata",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "Create a property listing",
+                "parameters": [
+                    {
+                        "description": "Listing payload",
+                        "name": "listing",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateListingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.Listing"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.FieldError"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/search": {
+            "get": {
+                "description": "Filters by type, price range, bedrooms, and returns listings within radius_km of a given coordinate",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "Search listings by filters and location radius",
+                "parameters": [
+                    {
+                        "enum": [
+                            "rent",
+                            "sale",
+                            "shortlet"
+                        ],
+                        "type": "string",
+                        "description": "Listing type",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "number",
+                        "description": "Minimum price",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "number",
+                        "description": "Maximum price",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "Exact bedroom count",
+                        "name": "bedrooms",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "Minimum bedroom count",
+                        "name": "min_bedrooms",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City name",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Latitude for radius search (-90 to 90)",
+                        "name": "lat",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Longitude for radius search (-180 to 180)",
+                        "name": "lng",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0.1,
+                        "type": "number",
+                        "description": "Radius in kilometers",
+                        "name": "radius_km",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "created_at",
+                            "price",
+                            "bedrooms",
+                            "distance"
+                        ],
+                        "type": "string",
+                        "default": "created_at",
+                        "description": "Sort field",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort order",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Listing"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "$ref": "#/definitions/models.PaginationMetadata"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.FieldError"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/listings/{id}": {
+            "get": {
+                "description": "Returns the listing with matching UUID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "Fetch a listing by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Listing UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.Listing"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates fields of an existing property listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "Update a listing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Listing UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Listing update payload",
+                        "name": "listing",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateListingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.Listing"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.FieldError"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a property listing by UUID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "Delete a listing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Listing UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Updates specific fields of an existing property listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Listings"
+                ],
+                "summary": "Partially update a listing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Listing UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial update payload",
+                        "name": "listing",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateListingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.Listing"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.StandardResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.FieldError"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.StandardResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.CreateListingRequest": {
+            "type": "object",
+            "required": [
+                "agent_id",
+                "bedrooms",
+                "location",
+                "price",
+                "title",
+                "type"
+            ],
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "agent_1001"
+                },
+                "bathrooms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3
+                },
+                "bedrooms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Modern penthouse with ocean view."
+                },
+                "location": {
+                    "$ref": "#/definitions/models.Location"
+                },
+                "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 185000000
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 3,
+                    "example": "Luxury 3-Bedroom Penthouse in Ikoyi"
+                },
+                "type": {
+                    "enum": [
+                        "rent",
+                        "sale",
+                        "shortlet"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ListingType"
+                        }
+                    ],
+                    "example": "sale"
+                }
+            }
+        },
+        "models.FieldError": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string",
+                    "example": "price"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "price must be greater than or equal to 0"
+                }
+            }
+        },
+        "models.Listing": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "example": "agent_1001"
+                },
+                "bathrooms": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "bedrooms": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2026-03-23T10:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Modern penthouse with ocean view and automated lighting."
+                },
+                "distance_km": {
+                    "type": "number",
+                    "example": 2.45
+                },
+                "id": {
+                    "type": "string",
+                    "example": "11111111-1111-1111-1111-111111111111"
+                },
+                "location": {
+                    "$ref": "#/definitions/models.Location"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 185000000
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Luxury 3-Bedroom Penthouse in Ikoyi"
+                },
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ListingType"
+                        }
+                    ],
+                    "example": "sale"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2026-03-23T10:00:00Z"
+                }
+            }
+        },
+        "models.ListingType": {
+            "type": "string",
+            "enum": [
+                "rent",
+                "sale",
+                "shortlet"
+            ],
+            "x-enum-varnames": [
+                "ListingTypeRent",
+                "ListingTypeSale",
+                "ListingTypeShortlet"
+            ]
+        },
+        "models.Location": {
+            "type": "object",
+            "required": [
+                "latitude",
+                "longitude"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "12 Alexander Avenue, Ikoyi"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Lagos"
+                },
+                "latitude": {
+                    "type": "number",
+                    "example": 6.452
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": 3.435
+                }
+            }
+        },
+        "models.PaginationMetadata": {
+            "type": "object",
+            "properties": {
+                "current_page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "has_next_page": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "has_prev_page": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "total_items": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "models.StandardResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.FieldError"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Operation successful"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/models.PaginationMetadata"
+                },
+                "status_code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "models.UpdateListingRequest": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "agent_1001"
+                },
+                "bathrooms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3
+                },
+                "bedrooms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 3
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "example": "Updated description."
+                },
+                "location": {
+                    "$ref": "#/definitions/models.UpdateLocationRequest"
+                },
+                "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 175000000
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 3,
+                    "example": "Updated Penthouse Title"
+                },
+                "type": {
+                    "enum": [
+                        "rent",
+                        "sale",
+                        "shortlet"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.ListingType"
+                        }
+                    ],
+                    "example": "sale"
+                }
+            }
+        },
+        "models.UpdateLocationRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "14 Alexander Avenue, Ikoyi"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Lagos"
+                },
+                "latitude": {
+                    "type": "number",
+                    "example": 6.4525
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": 3.4355
+                }
+            }
+        }
+    }
+}

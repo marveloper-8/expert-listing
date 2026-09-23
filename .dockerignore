@@ -1,0 +1,9 @@
+.git
+.github
+.env
+*.db
+*.exe
+tests/
+tmp/
+scratch/
+bin/
