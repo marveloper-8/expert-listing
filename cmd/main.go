@@ -67,9 +67,8 @@ func main() {
 		ginSwagger.DefaultModelsExpandDepth(1),
 	))
 
-	api := router.Group("/api")
-	{
-		listings := api.Group("/listings")
+	registerRoutes := func(rg *gin.RouterGroup) {
+		listings := rg.Group("/listings")
 		{
 			listings.GET("/search", listingHandler.SearchListings)
 			listings.GET("", listingHandler.GetListings)
@@ -80,6 +79,9 @@ func main() {
 			listings.DELETE("/:id", listingHandler.DeleteListing)
 		}
 	}
+
+	registerRoutes(router.Group("/api"))
+	registerRoutes(router.Group("/api/v1"))
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
