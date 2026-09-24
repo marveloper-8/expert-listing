@@ -3,8 +3,9 @@
 A backend service built in Go for managing real estate listings with full CRUD support, geospatial radius searching (Haversine formula), filtering, pagination, and input validation.
 
 ### Live Demo & API Docs
-- **Interactive Swagger UI**: [https://expertlisting.nexalabs.site/swagger/index.html](https://expertlisting.nexalabs.site/swagger/index.html)
-- **Base API URL**: `https://expertlisting.nexalabs.site/api/v1`
+- **Live URL**: [https://expertlisting.nexalabs.site](https://expertlisting.nexalabs.site) *(automatically redirects to Swagger UI)*
+- **Interactive Swagger Docs**: [https://expertlisting.nexalabs.site/swagger/index.html](https://expertlisting.nexalabs.site/swagger/index.html)
+- **Base API URL**: `https://expertlisting.nexalabs.site/api/v1` (or `/api`)
 
 ---
 
@@ -85,16 +86,18 @@ Listings group geographical details inside a nested `location` object:
 ---
 
 ## API Endpoints
+*(Both `/api/v1/...` and `/api/...` prefixes are supported)*
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` | `/` | Redirects to Swagger UI documentation |
+| `GET` | `/health` | Health check endpoint |
 | `GET` | `/api/v1/listings` | List properties with pagination (`page`, `limit`) |
 | `GET` | `/api/v1/listings/:id` | Get single property by UUID |
 | `POST` | `/api/v1/listings` | Create a new property listing |
 | `PUT` | `/api/v1/listings/:id` | Update an existing property listing |
 | `DELETE` | `/api/v1/listings/:id` | Remove a property listing |
 | `GET` | `/api/v1/listings/search` | Search by radius (`lat`, `lng`, `radius_km`) and filters |
-| `GET` | `/health` | Health check endpoint |
 
 ---
 
