@@ -61,6 +61,12 @@ func main() {
 	router.Use(middleware.PanicRecovery())
 	router.Use(middleware.SetupCORS(cfg.AllowOrigins))
 
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+	})
+	router.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+	})
 	router.GET("/health", healthHandler.Check)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(
 		swaggerFiles.Handler,
